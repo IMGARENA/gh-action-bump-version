@@ -88,3 +88,4 @@ Toolkit.run(async tools => {
   }
   tools.exit.success('Version bumped!')
 })
+
