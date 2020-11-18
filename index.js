@@ -47,13 +47,10 @@ Toolkit.run(async tools => {
     await tools.runInWorkspace('git',
       ['config', 'user.email', `"${process.env.GITHUB_EMAIL || 'gh-action-bump-version@users.noreply.github.com'}"`])
 
-    let currentBranch = /refs\/[a-zA-Z]+\/(.*)/.exec(process.env.GITHUB_REF)[1]
-    let isPullRequest = false
-    if (process.env.GITHUB_HEAD_REF) {
-      // Comes from a pull request
-      currentBranch = process.env.GITHUB_HEAD_REF
-      isPullRequest = true
-    }
+    
+    const currentBranch = process.env.GITHUB_HEAD_REF
+    const isPullRequest = true
+    
     console.log('currentBranch:', currentBranch)
     // do it in the current checked out github branch (DETACHED HEAD)
     // important for further usage of the package.json version
