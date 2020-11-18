@@ -1,4 +1,4 @@
-## gh-action-bump-version
+## IMGARENA: gh-action-bump-version
 
 GitHub Action for automated npm version bump.
 
