@@ -26,41 +26,18 @@ Toolkit.run(async tools => {
     return
   }
 
-  const majorWords = process.env['INPUT_MAJOR-WORDING'].split(',')
-  const minorWords = process.env['INPUT_MINOR-WORDING'].split(',')
-  const patchWords = process.env['INPUT_PATCH-WORDING'].split(',')
-  const preReleaseWords = process.env['INPUT_RC-WORDING'].split(',')
-
-  let version = process.env.INPUT_DEFAULT || 'patch'
-  let foundWord = null
+  const majorWords = ["MAJOR:"];
+  const minorWords = ["MINOR:"];
+  const preReleaseWords = ["PRE-RELEASE:"];
+  
+  let version = 'patch'
 
   if (messages.some(
-    message => /^([a-zA-Z]+)(\(.+\))?(\!)\:/.test(message) || majorWords.some(word => message.includes(word)))) {
+    message => majorWords.some(word => message.includes(word)))) {
     version = 'major'
   } else if (messages.some(message => minorWords.some(word => message.includes(word)))) {
     version = 'minor'
-  } else if (messages.some(message => preReleaseWords.some(word => {
-    if (message.includes(word)) {
-      foundWord = word
-      return true
-    } else {
-      return false
-    }
-  }
-  ))) {
-    const preid = foundWord.split('-')[1]
-    version = `prerelease --preid=${preid}`
-  } else if (patchWords && Array.isArray(patchWords)) {
-    if (!messages.some(message => patchWords.some(word => message.includes(word)))) {
-      version = null
-    }
-  }
-
-  if (version === null) {
-    console.log('toto');
-    tools.exit.success('No version keywords found, skipping bump.')
-    return
-  }
+  } 
 
   try {
     const current = pkg.version.toString()
@@ -99,17 +76,10 @@ Toolkit.run(async tools => {
     newVersion = `${process.env['INPUT_TAG-PREFIX']}${newVersion}`
     console.log('new version:', newVersion)
     console.log(`::set-output name=newTag::${newVersion}`)
-    try {
-      // to support "actions/checkout@v1"
-      await tools.runInWorkspace('git', ['commit', '-a', '-m', `ci: ${commitMessage} ${newVersion}`])
-    } catch (e) {
-      console.warn('git commit failed because you are using "actions/checkout@v2"; ' +
-        'but that doesnt matter because you dont need that git commit, thats only for "actions/checkout@v1"')
-    }
 
     const remoteRepo = `https://${process.env.GITHUB_ACTOR}:${process.env.GITHUB_TOKEN}@github.com/${process.env.GITHUB_REPOSITORY}.git`
     if (process.env['INPUT_SKIP-TAG'] !== 'true') {
-      await tools.runInWorkspace('git', ['tag', newVersion])
+      await tools.runInWorkspace('git', ['tag', newVersion, '-m', github.event.pull_request.title ])
       await tools.runInWorkspace('git', ['push', remoteRepo, '--follow-tags'])
       await tools.runInWorkspace('git', ['push', remoteRepo, '--tags'])
     } else {
