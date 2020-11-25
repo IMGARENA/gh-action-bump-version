@@ -11,35 +11,14 @@ if (process.env.PACKAGEJSON_DIR) {
 Toolkit.run(async tools => {
   const pkg = tools.getPackageJSON()
   const event = tools.context.payload
-  
-  console.log(JSON.stringify(tools.context, null, '   '));
-
-  if (!event.commits) {
-    console.log('Couldn\'t find any commits in this event, incrementing patch version...')
-  }
-
-  const messages = event.commits ? event.commits.map(commit => commit.message + '\n' + commit.body) : []
-
-  const commitMessage = 'version bump to'
-  console.log('messages:', messages)
-  const isVersionBump = messages.map(message => message.toLowerCase().includes(commitMessage)).includes(true)
-  if (isVersionBump) {
-    tools.exit.success('No action necessary!')
-    return
-  }
-
-  const majorWords = ["MAJOR:"];
-  const minorWords = ["MINOR:"];
-  const preReleaseWords = ["PRE-RELEASE:"];
+  const title = event.pull_request.title;
   
   let version = 'patch'
-
-  if (messages.some(
-    message => majorWords.some(word => message.includes(word)))) {
-    version = 'major'
-  } else if (messages.some(message => minorWords.some(word => message.includes(word)))) {
-    version = 'minor'
-  } 
+  if (title.match(/^\s*MAJOR.*/)){
+    version = 'major';
+  } else if (title.match(/^\s*MINOR.*/)){
+    version = 'minor';
+  }
 
   try {
     const current = pkg.version.toString()
@@ -61,12 +40,7 @@ Toolkit.run(async tools => {
     console.log('current:', current, '/', 'version:', version)
     let newVersion = execSync(`npm version --git-tag-version=false ${version}`).toString().trim()
     await tools.runInWorkspace('git', ['commit', '-a', '-m', `ci: ${commitMessage} ${newVersion}`])
-
-    // now go to the actual branch to perform the same versioning
-    if (isPullRequest) {
-      // First fetch to get updated local version of branch
-      await tools.runInWorkspace('git', ['fetch'])
-    }
+    await tools.runInWorkspace('git', ['fetch'])
     await tools.runInWorkspace('git', ['checkout', currentBranch])
     await tools.runInWorkspace('npm',
       ['version', '--allow-same-version=true', '--git-tag-version=false', current])
