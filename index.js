@@ -41,7 +41,7 @@ Toolkit.run(async tools => {
     let newVersion = execSync(`npm version --git-tag-version=false ${version}`).toString().trim()
     await tools.runInWorkspace('git', ['commit', '-a', '-m', `ci: ${commitMessage} ${newVersion}`])
     await tools.runInWorkspace('git', ['fetch'])
-    await tools.runInWorkspace('git', ['checkout', currentBranch])
+    await tools.runInWorkspace('git', ['checkout', event.pull_request.base.ref])
     await tools.runInWorkspace('npm',
       ['version', '--allow-same-version=true', '--git-tag-version=false', current])
     console.log('current:', current, '/', 'version:', version)
