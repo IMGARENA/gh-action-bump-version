@@ -12,6 +12,7 @@ Toolkit.run(async tools => {
   const pkg = tools.getPackageJSON()
   const event = tools.context.payload
   const title = event.pull_request.title;
+  const commitMessage = 'version bump to:';
   
   let version = 'patch'
   if (title.match(/^\s*MAJOR.*/)){
@@ -31,7 +32,6 @@ Toolkit.run(async tools => {
     
     const currentBranch = process.env.GITHUB_HEAD_REF
     const isPullRequest = true
-    
     console.log('currentBranch:', currentBranch)
     // do it in the current checked out github branch (DETACHED HEAD)
     // important for further usage of the package.json version
@@ -59,7 +59,7 @@ Toolkit.run(async tools => {
     
     const remoteRepo = `https://${process.env.GITHUB_ACTOR}:${process.env.GITHUB_TOKEN}@github.com/${process.env.GITHUB_REPOSITORY}.git`
     if (process.env['INPUT_SKIP-TAG'] !== 'true') {
-      await tools.runInWorkspace('git', ['tag', newVersion, '-m', event.pull_request.title ])
+      await tools.runInWorkspace('git', ['tag', newVersion, '-m', event.pull_request.title.replace(/(MAJOR|MINOR):\s*/, '') ])
       await tools.runInWorkspace('git', ['push', remoteRepo, '--follow-tags'])
       await tools.runInWorkspace('git', ['push', remoteRepo, '--tags'])
     } else {
